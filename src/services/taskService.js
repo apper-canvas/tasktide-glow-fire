@@ -1,6 +1,8 @@
 /**
  * Service for managing task operations with the Apper backend
+ * Uses ApperClient for Apper operations and axios for any direct HTTP requests
  */
+import axios from 'axios';
 
 // Get tasks for the current user
 export async function fetchTasks(filterOptions = {}) {
