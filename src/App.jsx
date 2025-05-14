@@ -17,9 +17,12 @@ import TaskDetail from './pages/TaskDetail';
 function App() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [darkMode, setDarkMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   
-export const AuthContext = createContext(null);
+  // Get authentication status with proper error handling
+  const userState = useSelector((state) => state.user);
+  const isAuthenticated = userState?.isAuthenticated || false;
   // Initialize ApperUI once when the app loads
   useEffect(() => {
     const { ApperClient, ApperUI } = window.ApperSDK;
@@ -136,7 +139,6 @@ export const AuthContext = createContext(null);
           pauseOnHover
           theme={darkMode ? 'dark' : 'light'}
           toastClassName="!rounded-lg !font-medium !shadow-md"
-           <Route path="*" element={<NotFound />} />
         />
       </div>
     </AuthContext.Provider>
