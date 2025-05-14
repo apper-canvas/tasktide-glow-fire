@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans bg-surface-50 text-surface-900 dark:bg-surface-900 dark:text-surface-50;
+    @apply transition-colors duration-200 ease-in-out;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-bold;
+  }
+
+  h1 {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+
+  h2 {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-opacity-50;
+    @apply disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white shadow-sm;
+    @apply hover:bg-primary-dark focus:ring-primary;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white shadow-sm;
+    @apply hover:bg-secondary-dark focus:ring-secondary;
+  }
+
+  .btn-outline {
+    @apply border border-surface-300 bg-white text-surface-800;
+    @apply hover:bg-surface-50 focus:ring-surface-400;
+    @apply dark:bg-surface-800 dark:text-surface-100 dark:border-surface-700;
+    @apply dark:hover:bg-surface-700;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-surface-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply bg-white dark:bg-surface-800 dark:border-surface-700;
+    @apply placeholder-surface-400 dark:placeholder-surface-500;
+  }
+
+  .card {
+    @apply bg-white dark:bg-surface-800 rounded-xl shadow-card p-4;
+    @apply dark:shadow-none dark:border dark:border-surface-700;
+    @apply transition-all duration-200;
+  }
+
+  .task-item {
+    @apply flex items-center gap-3 p-3 rounded-lg;
+    @apply hover:bg-surface-100 dark:hover:bg-surface-800;
+    @apply transition-all duration-150;
+  }
+
+  .priority-high {
+    @apply bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500;
+  }
+
+  .priority-medium {
+    @apply bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500;
+  }
+
+  .priority-low {
+    @apply bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500;
+  }
+
+  .task-checkbox {
+    @apply h-5 w-5 rounded-full border-2 flex items-center justify-center;
+    @apply transition-all duration-200 cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Import React Toastify styles */
+@import 'react-toastify/dist/ReactToastify.css';
