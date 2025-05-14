@@ -79,19 +79,20 @@ export async function createTask(taskData) {
 }
 
 // Update an existing task
-export async function updateTask(taskData) {
+export async function updateTask(taskId, taskData) {
   try {
     const { ApperClient } = window.ApperSDK;
     const apperClient = new ApperClient({
       apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
-
-    const response = await apperClient.updateRecord("task", { records: [taskData] });
+    
+    const updateData = { ...taskData, Id: taskId };
+    const response = await apperClient.updateRecord("task", { records: [updateData] });
     return response.results?.[0]?.data;
   } catch (error) {
     console.error("Error updating task:", error);
-    throw error;
+    throw error; 
   }
 }
 
@@ -116,11 +117,36 @@ export const deleteTask = async (taskId) => {
 };
 
 // Get a task by ID
-export async function getTaskById(taskId) {
-  // Implementation for fetching a single task by ID
-  // This function is mentioned in the default export but not implemented
-  // Adding a placeholder implementation
-  return null;
+export const getTaskById = async (taskId) => {
+  try {
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    const params = {
+      Fields: [
+        { Field: { Name: "Id" } },
+        { Field: { Name: "title" } },
+        { Field: { Name: "description" } },
+        { Field: { Name: "priority" } },
+        { Field: { Name: "category" } },
+        { Field: { Name: "isCompleted" } },
+        { Field: { Name: "createdAt" } },
+        { Field: { Name: "Owner" } }
+      ],
+      where: [
+        { fieldName: "Id", Operator: "ExactMatch", values: [taskId] }
+      ]
+    };
+
+    const response = await apperClient.fetchRecords("task", params);
+    return response.data && response.data.length > 0 ? response.data[0] : null;
+  } catch (error) {
+    console.error(`Error fetching task with ID ${taskId}:`, error);
+    throw error;
+  }
 }
 
 // Export the service as default for easier imports
