@@ -5,7 +5,7 @@
 @layer base {
   body {
     @apply font-sans bg-surface-50 text-surface-900 dark:bg-surface-900 dark:text-surface-50;
-    @apply transition-colors duration-200 ease-in-out;
+    @apply transition-colors motion-safe:duration-200 motion-reduce:duration-0 ease-in-out;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -23,12 +23,34 @@
   h3 {
     @apply text-lg sm:text-xl md:text-2xl;
   }
+  
+  /* High contrast mode overrides */
+  .high-contrast {
+    --tw-bg-opacity: 1;
+    --tw-text-opacity: 1;
+  }
+  
+  .high-contrast.dark {
+    --tw-contrast: contrast(1.2);
+  }
+  
+  .high-contrast:not(.dark) {
+    --tw-contrast: contrast(1.1);
+  }
+  
+  /* Reduce motion preference */
+  .reduce-motion * {
+    --tw-transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
 }
 
 @layer components {
   .btn {
     @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
     @apply focus:outline-none focus:ring-2 focus:ring-opacity-50;
+    @apply motion-reduce:transition-none;
     @apply disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
@@ -59,13 +81,14 @@
   .card {
     @apply bg-white dark:bg-surface-800 rounded-xl shadow-card p-4;
     @apply dark:shadow-none dark:border dark:border-surface-700;
-    @apply transition-all duration-200;
+    @apply transition-all motion-safe:duration-200 motion-reduce:duration-0;
   }
 
   .task-item {
     @apply flex items-center gap-3 p-3 rounded-lg;
     @apply hover:bg-surface-100 dark:hover:bg-surface-800;
-    @apply transition-all duration-150;
+    @apply transition-all motion-safe:duration-150 motion-reduce:duration-0;
+    @apply high-contrast:border high-contrast:border-surface-300 high-contrast:dark:border-surface-600;
   }
 
   .priority-high {
@@ -82,7 +105,7 @@
 
   .task-checkbox {
     @apply h-5 w-5 rounded-full border-2 flex items-center justify-center;
-    @apply transition-all duration-200 cursor-pointer;
+    @apply transition-all motion-safe:duration-200 motion-reduce:duration-0 cursor-pointer;
   }
 }
 
@@ -94,6 +117,12 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  /* High contrast utilities */
+  .high-contrast .high-contrast\:border { border-width: 1px; }
+  
+  /* Motion utilities */
+  @media (prefers-reduced-motion: reduce) { .motion-reduce\:duration-0 { transition-duration: 0s; } }
 }
 
 /* Import React Toastify styles */

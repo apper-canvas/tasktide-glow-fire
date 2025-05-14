@@ -7,6 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Existing colors
         primary: {
           DEFAULT: '#3b82f6',
           light: '#93c5fd',
@@ -45,6 +46,23 @@ export default {
         'xl': '0.75rem',
         '2xl': '1rem'
       }
+    }
+  },
+  plugins: [],
+  darkMode: 'class',
+  variants: {
+    extend: {
+      // Enable variants for motion preferences
+      transitionProperty: ['motion-safe', 'motion-reduce'],
+      transitionDuration: ['motion-safe', 'motion-reduce'],
+      transitionTimingFunction: ['motion-safe', 'motion-reduce'],
+      transitionDelay: ['motion-safe', 'motion-reduce'],
+      animation: ['motion-safe', 'motion-reduce'],
+      // Enable variants for high contrast
+      backgroundColor: ['high-contrast'],
+      textColor: ['high-contrast'],
+      borderColor: ['high-contrast'],
+      borderWidth: ['high-contrast']
     }
   },
   plugins: [],
