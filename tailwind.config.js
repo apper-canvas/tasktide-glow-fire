@@ -1,4 +1,17 @@
 /** @type {import('tailwindcss').Config} */
+
+// Create a custom plugin for high-contrast mode
+const highContrastPlugin = ({ addVariant }) => {
+  // Add a variant for high-contrast mode
+  addVariant('high-contrast', '.high-contrast &');
+  
+  // Add variants for high-contrast mode in dark mode
+  addVariant('high-contrast-dark', '.high-contrast.dark &');
+  
+  // Add variants for high-contrast mode in light mode
+  addVariant('high-contrast-light', '.high-contrast:not(.dark) &');
+};
+
 export default {
   content: [
     "./index.html",
@@ -48,23 +61,13 @@ export default {
       }
     }
   },
-  plugins: [],
   darkMode: 'class',
-  variants: {
-    extend: {
-      // Enable variants for motion preferences
-      transitionProperty: ['motion-safe', 'motion-reduce'],
-      transitionDuration: ['motion-safe', 'motion-reduce'],
-      transitionTimingFunction: ['motion-safe', 'motion-reduce'],
-      transitionDelay: ['motion-safe', 'motion-reduce'],
-      animation: ['motion-safe', 'motion-reduce'],
-      // Enable variants for high contrast
-      backgroundColor: ['high-contrast'],
-      textColor: ['high-contrast'],
-      borderColor: ['high-contrast'],
-      borderWidth: ['high-contrast']
-    }
-  },
-  plugins: [],
-  darkMode: 'class',
+  plugins: [
+    // Add the high-contrast plugin
+    highContrastPlugin,
+    // Other plugins can be added here
+  ],
 }
+
+// Note: The variants key is deprecated in Tailwind CSS v3.x
+// We're now using the plugin API to register variants

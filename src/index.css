@@ -25,25 +25,7 @@
   }
   
   /* High contrast mode overrides */
-  .high-contrast {
-    --tw-bg-opacity: 1;
-    --tw-text-opacity: 1;
-  }
-  
-  .high-contrast.dark {
-    --tw-contrast: contrast(1.2);
-  }
-  
-  .high-contrast:not(.dark) {
-    --tw-contrast: contrast(1.1);
-  }
-  
-  /* Reduce motion preference */
-  .reduce-motion * {
-    --tw-transition-duration: 0ms !important;
-    animation-duration: 0ms !important;
-    transition-duration: 0ms !important;
-  }
+  /* Moved to utilities layer */
 }
 
 @layer components {
@@ -88,7 +70,7 @@
     @apply flex items-center gap-3 p-3 rounded-lg;
     @apply hover:bg-surface-100 dark:hover:bg-surface-800;
     @apply transition-all motion-safe:duration-150 motion-reduce:duration-0;
-    @apply high-contrast:border high-contrast:border-surface-300 high-contrast:dark:border-surface-600;
+    @apply border-0; /* Base border state, will be overridden by high-contrast variant */
   }
 
   .priority-high {
@@ -118,8 +100,29 @@
     display: none;
   }
   
+  /* High contrast mode base */
+  .high-contrast {
+    --tw-bg-opacity: 1;
+    --tw-text-opacity: 1;
+  }
+  
+  .high-contrast.dark {
+    --tw-contrast: contrast(1.2);
+  }
+  
+  .high-contrast:not(.dark) {
+    --tw-contrast: contrast(1.1);
+  }
+  
+  /* Reduce motion preference */
+  .reduce-motion * {
+    --tw-transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+  
   /* High contrast utilities */
-  .high-contrast .high-contrast\:border { border-width: 1px; }
+  .high-contrast .task-item { @apply border border-surface-300 dark:border-surface-600; }
   
   /* Motion utilities */
   @media (prefers-reduced-motion: reduce) { .motion-reduce\:duration-0 { transition-duration: 0s; } }
