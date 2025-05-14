@@ -15,7 +15,7 @@ import {
   Tag,
   Filter,
   CheckCircle,
-  Wave,
+  Vibrate,
   ListTodo,
   LogOut,
   FileQuestion
@@ -39,7 +39,7 @@ const iconMap = {
   Tag,
   Filter,
   CheckCircle,
-  Wave,
+  Vibrate: Vibrate, // Replaced Wave with Vibrate icon
   ListTodo,
   LogOut,
   FileQuestion
