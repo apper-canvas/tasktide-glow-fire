@@ -155,12 +155,6 @@ function MainFeature({ onTasksChange }) {
     }
   };
   
-  // Delete a task
-  const handleDeleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id));
-    toast.success('Task deleted successfully!');
-  };
-  
   // Delete a task from the backend
   const handleDeleteTask = async (id) => {
     setIsDeleting(true);
@@ -375,9 +369,8 @@ function MainFeature({ onTasksChange }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-              <h3 className="font-semibold mb-4 text-surface-800 dark:text-white">
             className="overflow-hidden"
-          >
+            >
             <div className="p-6 border-b border-surface-200 dark:border-surface-700 bg-primary/5 dark:bg-primary/10">
               <h3 className="font-semibold mb-4 text-surface-800 dark:text-white">
                 {editMode ? 'Edit Task' : 'Add New Task'}
@@ -604,8 +597,9 @@ function MainFeature({ onTasksChange }) {
                       <PencilIcon className="w-4 h-4" />
                     </button>
                     
+                    <button
                       onClick={() => handleDeleteTask(task.Id)}
-                      onClick={() => handleDeleteTask(task.id)}
+                      className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-surface-500 hover:text-red-600 dark:text-surface-400 dark:hover:text-red-400 transition-colors"
                       disabled={isDeleting && deletingTaskId === task.Id}
                     >
                       {isDeleting && deletingTaskId === task.Id ? (
@@ -613,22 +607,6 @@ function MainFeature({ onTasksChange }) {
                       ) : (
                         <TrashIcon className="w-4 h-4" />
                       )}
-                    </button>
-                  </div>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </motion.ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default MainFeature;
-                      className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-surface-500 hover:text-red-600 dark:text-surface-400 dark:hover:text-red-400 transition-colors"
-                    >
-                      <TrashIcon className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.li>
