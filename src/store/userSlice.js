@@ -3,8 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   user: null,
   isAuthenticated: false,
-  darkMode: localStorage.getItem('theme') === 'dark' || 
-            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  darkMode: false
 };
 
 export const userSlice = createSlice({
@@ -13,7 +12,6 @@ export const userSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       // CRITICAL: Always use deep cloning to avoid reference issues
-      // This prevents potential issues with object mutations
       state.user = JSON.parse(JSON.stringify(action.payload));
       state.isAuthenticated = !!action.payload;
     },

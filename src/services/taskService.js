@@ -108,3 +108,29 @@ export async function deleteTask(taskId) {
     throw error;
   }
 }
+
+/**
+ * Delete a task by ID
+ */
+export const deleteTask = async (taskId) => {
+  try {
+    const client = getClient();
+    const response = await client.deleteRecord(TABLE_NAME, {
+      recordIds: [taskId]
+    });
+    
+    if (response.success && response.results && response.results[0].success) {
+      toast.success("Task deleted successfully!");
+      return true;
+    } else {
+      throw new Error(response.results?.[0]?.message || "Failed to delete task");
+    }
+  } catch (error) {
+    console.error(`Error deleting task with ID ${taskId}:`, error);
+    toast.error(error.message || "Failed to delete task. Please try again.");
+    throw error;
+  }
+};
+
+// Export the service as default for easier imports
+export default { fetchTasks, getTaskById, createTask, updateTask, deleteTask };
