@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
+import { useContext } from 'react';
+import { AuthContext } from '../App';
 import getIcon from '../utils/iconUtils';
 import MainFeature from '../components/MainFeature';
 
@@ -10,11 +13,16 @@ function Home() {
   const CheckCircleIcon = getIcon('CheckCircle');
   const ListTodoIcon = getIcon('ListTodo');
   
+  const { logout } = useContext(AuthContext);
+  const { user } = useSelector(state => state.user);
+  
   // State for completed tasks count
   const [completedCount, setCompletedCount] = useState(0);
   const [taskCount, setTaskCount] = useState(0);
   
-  // Handle task changes from MainFeature
+  const LogoutIcon = getIcon('LogOut');
+  
+  // Handle task status changes from MainFeature
   const handleTasksChange = (completed, total) => {
     setCompletedCount(completed);
     setTaskCount(total);
@@ -52,26 +60,37 @@ function Home() {
                 <WaveIcon className="w-6 h-6 text-primary-light animate-pulse" />
               </div>
               <p className="mt-1 text-surface-600 dark:text-surface-300">
-                {getGreeting()}, let's organize your tasks
+                {getGreeting()}{user ? `, ${user.firstName || 'there'}` : ''}, let's organize your tasks
               </p>
             </div>
             
-            <div className="flex items-center gap-3 bg-white dark:bg-surface-800 p-3 rounded-xl shadow-soft">
-              <div className="flex-1">
-                <div className="text-sm text-surface-500 dark:text-surface-400 mb-1 flex items-center gap-2">
-                  <CheckCircleIcon className="w-4 h-4" />
-                  <span>Task Completion</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 bg-white dark:bg-surface-800 p-3 rounded-xl shadow-soft">
+                <div className="flex-1">
+                  <div className="text-sm text-surface-500 dark:text-surface-400 mb-1 flex items-center gap-2">
+                    <CheckCircleIcon className="w-4 h-4" />
+                    <span>Task Completion</span>
+                  </div>
+                  <div className="bg-surface-100 dark:bg-surface-700 h-2 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-primary to-secondary"
+                      initial={{ width: '0%' }}
+                      animate={{ width: `${completionPercentage}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                  </div>
                 </div>
-                <div className="bg-surface-100 dark:bg-surface-700 h-2 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-gradient-to-r from-primary to-secondary"
-                    initial={{ width: '0%' }}
-                    animate={{ width: `${completionPercentage}%` }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                  />
-                </div>
+                <div className="font-semibold text-lg text-primary">{completionPercentage}%</div>
               </div>
-              <div className="font-semibold text-lg text-primary">{completionPercentage}%</div>
+            
+              <button
+                onClick={logout}
+                className="btn btn-outline flex items-center gap-2"
+                aria-label="Log out"
+              >
+                <LogoutIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Log out</span>
+              </button>
             </div>
           </motion.div>
         </div>

@@ -1,127 +1,149 @@
-import { Routes, Route } from 'react-router-dom';
+import { createContext, useEffect, useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { setUser, clearUser } from './store/userSlice';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useState, useEffect } from 'react';
-import getIcon from './utils/iconUtils';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Callback from './pages/Callback';
+import ErrorPage from './pages/ErrorPage';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
-import UserPreferences from './components/UserPreferences';
+
+// Create auth context
+export const AuthContext = createContext(null);
 
 function App() {
-  // Dark mode state
-  const [darkMode, setDarkMode] = useState(false);
-  // Font size preference (100 = default, 125 = large, 150 = extra large)
-  const [fontSize, setFontSize] = useState(100);
-  // Contrast mode (normal, high)
-  const [contrastMode, setContrastMode] = useState('normal');
-  // Reduced motion preference
-  const [reducedMotion, setReducedMotion] = useState(false);
-  // Preferences panel visibility
-  const [showPreferences, setShowPreferences] = useState(false);
-
-  // Initialize preferences from localStorage or user preferences
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Get authentication status with proper error handling
+  const userState = useSelector((state) => state.user);
+  const isAuthenticated = userState?.isAuthenticated || false;
+  const darkMode = userState?.darkMode || false;
+  
+  // Initialize ApperUI once when the app loads
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const savedFontSize = localStorage.getItem('fontSize');
-    const savedContrastMode = localStorage.getItem('contrastMode');
-    const savedReducedMotion = localStorage.getItem('reducedMotion');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const { ApperClient, ApperUI } = window.ApperSDK;
+    const client = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
     
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
+    // Initialize but don't show login yet
+    ApperUI.setup(client, {
+      target: '#authentication',
+      clientId: import.meta.env.VITE_APPER_PROJECT_ID,
+      view: 'both',
+      onSuccess: function (user) {
+        // CRITICAL: This exact currentPath logic must be preserved in all implementations
+        // DO NOT simplify or modify this pattern as it ensures proper redirection flow
+        let currentPath = window.location.pathname + window.location.search;
+        let redirectPath = new URLSearchParams(window.location.search).get('redirect');
+        const isAuthPage = currentPath.includes('/login') || currentPath.includes('/signup') || currentPath.includes(
+                '/callback') || currentPath.includes('/error');
+        if (user) {
+            // User is authenticated
+            if (redirectPath) {
+                navigate(redirectPath);
+            } else if (!isAuthPage) {
+                if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+                    navigate(currentPath);
+                } else {
+                    navigate('/');
+                }
+            } else {
+                navigate('/');
+            }
+            // Store user information in Redux
+            dispatch(setUser(JSON.parse(JSON.stringify(user))));
+        } else {
+            // User is not authenticated
+            if (!isAuthPage) {
+                navigate(
+                    currentPath.includes('/signup')
+                     ? `/signup?redirect=${currentPath}`
+                     : currentPath.includes('/login')
+                     ? `/login?redirect=${currentPath}`
+                     : '/login');
+            } else if (redirectPath) {
+                if (
+                    ![
+                        'error',
+                        'signup',
+                        'login',
+                        'callback'
+                    ].some((path) => currentPath.includes(path)))
+                    navigate(`/login?redirect=${redirectPath}`);
+                else {
+                    navigate(currentPath);
+                }
+            } else if (isAuthPage) {
+                navigate(currentPath);
+            } else {
+                navigate('/login');
+            }
+            dispatch(clearUser());
+        }
+      },
+      onError: function(error) {
+        console.error("Authentication failed:", error);
+      }
+    });
     
-    if (savedFontSize) setFontSize(parseInt(savedFontSize));
-    if (savedContrastMode) setContrastMode(savedContrastMode);
-    if (savedReducedMotion === 'true') setReducedMotion(true);
-  }, []);
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    
-    if (!darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+    setIsInitialized(true);
+  }, [dispatch, navigate]);
+  
+  // Authentication methods to share via context
+  const authMethods = {
+    isInitialized,
+    logout: async () => {
+      try {
+        const { ApperUI } = window.ApperSDK;
+        await ApperUI.logout();
+        dispatch(clearUser());
+        navigate('/login');
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
     }
   };
   
-  // Apply font size to document root
-  useEffect(() => {
-    document.documentElement.style.fontSize = `${fontSize}%`;
-    localStorage.setItem('fontSize', fontSize.toString());
-  }, [fontSize]);
+  // Don't render routes until initialization is complete
+  if (!isInitialized) {
+    return <div className="loading">Initializing application...</div>;
+  }
   
-  // Apply contrast mode
-  useEffect(() => {
-    if (contrastMode === 'high') {
-      document.documentElement.classList.add('high-contrast');
-    } else {
-      document.documentElement.classList.remove('high-contrast');
-    }
-    localStorage.setItem('contrastMode', contrastMode);
-  }, [contrastMode]);
-  
-  // Apply reduced motion preference
-  useEffect(() => {
-    if (reducedMotion) {
-      document.documentElement.classList.add('reduce-motion');
-    } else {
-      document.documentElement.classList.remove('reduce-motion');
-    }
-    localStorage.setItem('reducedMotion', reducedMotion.toString());
-  }, [reducedMotion]);
-
   return (
-    <div className="min-h-screen transition-colors motion-safe:duration-200 motion-reduce:duration-0">
-      <div className="fixed top-4 right-4 z-50">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowPreferences(!showPreferences)}
-            className="bg-surface-100 dark:bg-surface-800 rounded-full p-2 
-                      shadow-soft dark:shadow-none hover:bg-surface-200 
-                      dark:hover:bg-surface-700 transition-all"
-            aria-label="View display preferences"
-            aria-expanded={showPreferences}
-          >
-            <Settings className="h-5 w-5 text-primary dark:text-primary-light" />
-          </button>
-          
-          {showPreferences && (
-            <UserPreferences darkMode={darkMode} toggleDarkMode={toggleDarkMode} fontSize={fontSize} setFontSize={setFontSize} contrastMode={contrastMode} setContrastMode={setContrastMode} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} setShowPreferences={setShowPreferences} />
-          )}
-        </div>
-      </div>
-      
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+    <AuthContext.Provider value={authMethods}>
+      <div className={`min-h-screen transition-colors motion-safe:duration-200 motion-reduce:duration-0 ${darkMode ? 'dark' : ''}`}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/callback" element={<Callback />} />
+          <Route path="/error" element={<ErrorPage />} />
+          <Route path="/" element={isAuthenticated ? <Home /> : <Login />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
 
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme={darkMode ? 'dark' : 'light'}
-        toastClassName="!rounded-lg !font-medium !shadow-md"
-      />
-    </div>
+        <ToastContainer
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={darkMode ? 'dark' : 'light'}
+          toastClassName="!rounded-lg !font-medium !shadow-md"
+        />
+      </div>
+    </AuthContext.Provider>
   );
 }
-
-// Icon declarations
-const Sun = getIcon('Sun');
-const Moon = getIcon('Moon');
-const Settings = getIcon('Settings');
 
 export default App;

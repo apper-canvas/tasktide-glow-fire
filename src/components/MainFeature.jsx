@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import { useSelector } from 'react-redux';
 import getIcon from '../utils/iconUtils';
+import { fetchTasks, createTask, updateTask, deleteTask } from '../services/taskService';
+
 
 function MainFeature({ onTasksChange }) {
   // Icon declarations
@@ -19,22 +22,19 @@ function MainFeature({ onTasksChange }) {
   const TagIcon = getIcon('Tag');
   const FilterIcon = getIcon('Filter');
   
-  // State management
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem('tasks');
-    return savedTasks ? JSON.parse(savedTasks) : [
-      { 
-        id: '1', 
-        title: 'Welcome to TaskTide!', 
-        description: 'This is your first task. Try editing or completing it.',
-        priority: 'medium',
-        createdAt: new Date().toISOString(),
-        isCompleted: false,
-        category: 'Personal'
-      }
-    ];
-  });
+  const { user } = useSelector(state => state.user);
   
+  // State management
+  const [tasks, setTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState(null);
+  
+  // Task form state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState(null);
+  const [isTogglingComplete, setIsTogglingComplete] = useState(false);
+  const [togglingTaskId, setTogglingTaskId] = useState(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -56,17 +56,51 @@ function MainFeature({ onTasksChange }) {
     { id: 'shopping', name: 'Shopping', color: '#ec4899' },
     { id: 'health', name: 'Health', color: '#10b981' },
   ];
-  
-  // Save tasks to localStorage when they change
+
+  // Fetch tasks on component mount and when filters change
   useEffect(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    loadTasks();
+  }, [filter, priorityFilter, user?.id]);
+  
+  // Load tasks from backend
+  const loadTasks = async () => {
+    if (!user) return;
     
+    setIsLoading(true);
+    setLoadingError(null);
+    
+    try {
+      const filterOptions = {
+        status: filter !== 'all' ? filter : null,
+        priority: priorityFilter !== 'all' ? priorityFilter : null
+      };
+      
+      const data = await fetchTasks(filterOptions);
+      setTasks(data);
+    } catch (error) {
+      console.error("Failed to load tasks:", error);
+      setLoadingError("Failed to load your tasks. Please try again.");
+      toast.error("Failed to load tasks");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Update task metrics whenever tasks change
+  useEffect(() => {
     // Calculate completed tasks
     const completedTasks = tasks.filter(task => task.isCompleted).length;
     
     // Update parent component
     onTasksChange(completedTasks, tasks.length);
-  }, [tasks, onTasksChange]);
+  }, [tasks]);
+  
+  // Reset form error when form is closed
+  useEffect(() => {
+    if (!showForm) {
+      setFormError('');
+    }
+  }, [showForm]);
   
   // Filter tasks based on current filter
   const filteredTasks = tasks.filter(task => {
@@ -80,29 +114,45 @@ function MainFeature({ onTasksChange }) {
     return true;
   });
   
-  // Add a new task
-  const handleAddTask = () => {
+  // Add a new task to the backend
+  const handleAddTask = async () => {
     if (!newTask.title.trim()) {
       setFormError('Please enter a task title');
       return;
     }
     
-    const task = {
-      id: Date.now().toString(),
+    setIsSubmitting(true);
+    setFormError('');
+    
+    const taskData = {
       ...newTask,
       createdAt: new Date().toISOString(),
       isCompleted: false,
     };
     
-    setTasks([...tasks, task]);
-    setNewTask({
-      title: '',
-      description: '',
-      priority: 'medium',
-      category: 'Personal'
-    });
-    setShowForm(false);
-    toast.success('Task added successfully!');
+    try {
+      const createdTask = await createTask(taskData);
+      
+      // Add the created task to our state
+      setTasks(prevTasks => [createdTask, ...prevTasks]);
+      
+      // Reset the form
+      setNewTask({
+        title: '',
+        description: '',
+        priority: 'medium',
+        category: 'Personal'
+      });
+      
+      setShowForm(false);
+      toast.success('Task added successfully!');
+    } catch (error) {
+      console.error("Failed to add task:", error);
+      setFormError('Failed to add task. Please try again.');
+      toast.error("Failed to add task");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Delete a task
@@ -111,11 +161,53 @@ function MainFeature({ onTasksChange }) {
     toast.success('Task deleted successfully!');
   };
   
+  // Delete a task from the backend
+  const handleDeleteTask = async (id) => {
+    setIsDeleting(true);
+    setDeletingTaskId(id);
+    
+    try {
+      await deleteTask(id);
+      setTasks(prevTasks => prevTasks.filter(task => task.Id !== id));
+      toast.success('Task deleted successfully!');
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      toast.error("Failed to delete task");
+    } finally {
+      setIsDeleting(false);
+      setDeletingTaskId(null);
+    }
+  };
+  
   // Toggle task completion
-  const handleToggleComplete = (id) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? {...task, isCompleted: !task.isCompleted} : task
-    ));
+  const handleToggleComplete = async (id) => {
+    const task = tasks.find(t => t.Id === id);
+    if (!task) return;
+    
+    setIsTogglingComplete(true);
+    setTogglingTaskId(id);
+    
+    try {
+      const updatedTask = await updateTask({
+        Id: id,
+        isCompleted: !task.isCompleted
+      });
+      
+      // Update the task in our state
+      setTasks(prevTasks => prevTasks.map(t => 
+        t.Id === id ? {...t, isCompleted: !t.isCompleted} : t
+      ));
+      
+      if (updatedTask.isCompleted) {
+        toast.success('Task completed!');
+      }
+    } catch (error) {
+      console.error("Failed to update task completion status:", error);
+      toast.error("Failed to update task");
+    } finally {
+      setIsTogglingComplete(false);
+      setTogglingTaskId(null);
+    }
   };
   
   // Start editing a task
@@ -123,7 +215,7 @@ function MainFeature({ onTasksChange }) {
     setCurrentTask(task);
     setEditMode(true);
     setNewTask({
-      title: task.title,
+      title: task.title || task.Name,
       description: task.description,
       priority: task.priority,
       category: task.category
@@ -132,26 +224,46 @@ function MainFeature({ onTasksChange }) {
   };
   
   // Update a task
-  const handleUpdateTask = () => {
+  const handleUpdateTask = async () => {
     if (!newTask.title.trim()) {
       setFormError('Please enter a task title');
       return;
     }
     
-    setTasks(tasks.map(task => 
-      task.id === currentTask.id ? {...task, ...newTask} : task
-    ));
+    setIsSubmitting(true);
+    setFormError('');
     
-    setNewTask({
-      title: '',
-      description: '',
-      priority: 'medium',
-      category: 'Personal'
-    });
-    setEditMode(false);
-    setCurrentTask(null);
-    setShowForm(false);
-    toast.success('Task updated successfully!');
+    try {
+      const taskData = {
+        Id: currentTask.Id,
+        ...newTask
+      };
+      
+      const updatedTask = await updateTask(taskData);
+      
+      // Update the task in our state
+      setTasks(prevTasks => prevTasks.map(task => 
+        task.Id === currentTask.Id ? {...task, ...updatedTask} : task
+      ));
+      
+      // Reset the form
+      setNewTask({
+        title: '',
+        description: '',
+        priority: 'medium',
+        category: 'Personal'
+      });
+      setEditMode(false);
+      setCurrentTask(null);
+      setShowForm(false);
+      toast.success('Task updated successfully!');
+    } catch (error) {
+      console.error("Failed to update task:", error);
+      setFormError('Failed to update task. Please try again.');
+      toast.error("Failed to update task");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Cancel editing/adding
@@ -263,7 +375,7 @@ function MainFeature({ onTasksChange }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+              <h3 className="font-semibold mb-4 text-surface-800 dark:text-white">
             className="overflow-hidden"
           >
             <div className="p-6 border-b border-surface-200 dark:border-surface-700 bg-primary/5 dark:bg-primary/10">
@@ -364,7 +476,11 @@ function MainFeature({ onTasksChange }) {
                     onClick={editMode ? handleUpdateTask : handleAddTask}
                     className="btn btn-primary"
                   >
-                    {editMode ? 'Update Task' : 'Add Task'}
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center">Loading...</span>
+                    ) : (
+                      <span>{editMode ? 'Update Task' : 'Add Task'}</span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -374,7 +490,30 @@ function MainFeature({ onTasksChange }) {
       </AnimatePresence>
       
       <div className="p-2 sm:p-4 max-h-[500px] overflow-y-auto">
-        {filteredTasks.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <p className="mt-4 text-surface-600 dark:text-surface-400">Loading your tasks...</p>
+          </div>
+        ) : loadingError ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-red-100 dark:bg-red-900/20 rounded-full p-5 mb-4">
+              <XIcon className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-medium text-surface-800 dark:text-surface-200">
+              Error loading tasks
+            </h3>
+            <p className="text-surface-500 dark:text-surface-400 max-w-md mt-2">
+              {loadingError}
+            </p>
+            <button
+              onClick={loadTasks}
+              className="mt-4 btn btn-primary"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="bg-surface-100 dark:bg-surface-700 rounded-full p-5 mb-4">
               <TagIcon className="w-8 h-8 text-surface-400" />
@@ -395,7 +534,7 @@ function MainFeature({ onTasksChange }) {
             <AnimatePresence>
               {filteredTasks.map((task) => (
                 <motion.li 
-                  key={task.id}
+                  key={task.Id}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
@@ -406,9 +545,15 @@ function MainFeature({ onTasksChange }) {
                     className={`task-checkbox ${task.isCompleted 
                       ? 'bg-primary border-primary' 
                       : 'bg-white dark:bg-surface-700 border-surface-300 dark:border-surface-500'}`}
-                    onClick={() => handleToggleComplete(task.id)}
+                    onClick={() => handleToggleComplete(task.Id)}
                   >
-                    {task.isCompleted && <CheckIcon className="w-3 h-3 text-white" />}
+                    {task.isCompleted && (
+                      isTogglingComplete && togglingTaskId === task.Id ? (
+                        <span className="w-3 h-3 bg-white rounded-full animate-pulse"></span>
+                      ) : (
+                        <CheckIcon className="w-3 h-3 text-white" />
+                      )
+                    )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
@@ -417,7 +562,7 @@ function MainFeature({ onTasksChange }) {
                         <h4 
                           className={`font-medium ${task.isCompleted ? 'line-through text-surface-500 dark:text-surface-400' : 'text-surface-900 dark:text-white'}`}
                         >
-                          {task.title}
+                          {task.title || task.Name}
                         </h4>
                         
                         {task.description && (
@@ -459,8 +604,28 @@ function MainFeature({ onTasksChange }) {
                       <PencilIcon className="w-4 h-4" />
                     </button>
                     
-                    <button
+                      onClick={() => handleDeleteTask(task.Id)}
                       onClick={() => handleDeleteTask(task.id)}
+                      disabled={isDeleting && deletingTaskId === task.Id}
+                    >
+                      {isDeleting && deletingTaskId === task.Id ? (
+                        <div className="w-4 h-4 border-t-2 border-r-2 border-red-500 rounded-full animate-spin"></div>
+                      ) : (
+                        <TrashIcon className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </motion.ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default MainFeature;
                       className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-surface-500 hover:text-red-600 dark:text-surface-400 dark:hover:text-red-400 transition-colors"
                     >
                       <TrashIcon className="w-4 h-4" />
