@@ -26,9 +26,9 @@ function App() {
   // Initialize ApperUI once when the app loads
   useEffect(() => {
 
-    function webSocket() {
+    /*function webSocket() {
       console.log('import.meta: ', import.meta)
-        console.log("hot: ", import.meta.hot);
+        console.log("hot - 2: ", import.meta.hot);
         if (import.meta.hot) {
           const transport = import.meta.hot.hmrClient.transport;
           console.log("transport: ", transport);
@@ -41,7 +41,7 @@ function App() {
           console.log("Vite HMR is not enabled.");
         }
       }
-    webSocket();
+    webSocket();*/
     const { ApperClient, ApperUI } = window.ApperSDK;
     const client = new ApperClient({
       apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
