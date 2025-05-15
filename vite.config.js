@@ -7,6 +7,5 @@ server: {
 allowedHosts: true,
 host: true,
 strictPort: true,
-port: 5173,
-  hmr: true
+port: 5173
 }})
