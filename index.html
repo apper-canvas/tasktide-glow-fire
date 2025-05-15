@@ -8,20 +8,6 @@
     <title>TaskTide | Manage Your Tasks Efficiently</title>
     <meta name="description" content="TaskTide helps you organize your daily tasks, track progress, and boost productivity with a beautiful interface.">
     <script src="https://test-cdn.apper.io/v1/apper-sdk.v1.js"></script>
-    <script type="module">
-      console.log("hot-2: ", import.meta.hot);
-      if (import.meta.hot) {
-        const transport = import.meta.hot.hmrClient.transport;
-        console.log("transport: ", transport);
-
-        const beforeUnloadEvent = new Event("beforeunload");
-        window.dispatchEvent(beforeUnloadEvent);
-
-        transport.disconnect();
-      } else {
-        console.log("Vite HMR is not enabled.");
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
