@@ -18,7 +18,7 @@ function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-md space-y-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">TaskTide</h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Tasker</h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">Sign in to manage your tasks</p>
         </div>
         <div id="authentication" className="min-h-[400px]" />
